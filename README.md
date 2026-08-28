@@ -64,3 +64,8 @@ UGV DTU Software Department Final Round Submission
     * Learnt how to use **Binarisation/Thresholding** (`cv2.threshold` / Otsu's thresholding) to isolate objects of a specific brightness from a dark background.
     * Learnt how **Morphological Operations** (opening and closing via `cv2.morphologyEx`) clean up small salt-and-pepper noise in an image.
     * Understood **Contour Detection** (`cv2.findContours`) and how to extract spatial dimensions using bounding rectangles (`cv2.boundingRect`) and image moments (`cv2.moments`) to pinpoint exact center coordinates.
+
+    *   **Task 3 Code Revision (Update):** 
+    *   **What I Did:** Refined the threshold limits and contour filtering logic in `task-3/main.py` to improve the detection accuracy of the white circular obstacles.
+    *   **Problems Faced:** Found that minor lighting variations and small non-obstacle pixels were occasionally causing false positives.
+    *   **What I Learnt:** Learnt how to adjust the minimum area threshold filter (`cv2.contourArea`) dynamically to exclude background noise, ensuring only true obstacles/potholes are bounded.

@@ -11,36 +11,27 @@ def process_image(img_path, output_path):
 
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
     height, width = img.shape[:2]
-
     pothole_count = 0
     obstacle_count = 0
 
-    # =============================================================
     # 1. POTHOLE DETECTION
-    # =============================================================
-
     _, white_mask = cv2.threshold(
         gray, 215, 255, cv2.THRESH_BINARY
     )
-
     kernel_small = cv2.getStructuringElement(
         cv2.MORPH_ELLIPSE, (3, 3)
     )
-
     white_mask_cleaned = cv2.morphologyEx(
         white_mask,
         cv2.MORPH_OPEN,
         kernel_small
     )
-
     contours_white, _ = cv2.findContours(
         white_mask_cleaned,
         cv2.RETR_EXTERNAL,
         cv2.CHAIN_APPROX_SIMPLE
     )
-
     for cnt in contours_white:
         area = cv2.contourArea(cnt)
 
@@ -54,7 +45,6 @@ def process_image(img_path, output_path):
             circularity = 4 * np.pi * (
                 area / (perimeter * perimeter)
             )
-
             aspect_ratio = float(w) / h
 
             if (
@@ -63,7 +53,6 @@ def process_image(img_path, output_path):
                 and w < width * 0.45
                 and h < height * 0.45
             ):
-
                 # Ignore objects touching image borders
                 if (
                     x > 1
@@ -71,9 +60,7 @@ def process_image(img_path, output_path):
                     and x + w < width - 1
                     and y + h < height - 1
                 ):
-
                     pothole_count += 1
-
                     # Draw bounding box
                     cv2.rectangle(
                         img,
@@ -82,7 +69,6 @@ def process_image(img_path, output_path):
                         (0, 255, 0),
                         2
                     )
-
                     # Print coordinates
                     cv2.putText(
                         img,
@@ -93,18 +79,13 @@ def process_image(img_path, output_path):
                         (0, 255, 0),
                         1
                     )
-
                     print(
                         f"Pothole {pothole_count}: "
                         f"({x}, {y})"
                     )
 
-    # =============================================================
     # 2. OBSTACLE DETECTION
-    # =============================================================
-
     masks = []
-
     # Yellow / Gold / Brownish Yellow
     masks.append(
         cv2.inRange(
@@ -113,7 +94,6 @@ def process_image(img_path, output_path):
             np.array([38, 255, 255])
         )
     )
-
     # Dark Blue / Light Blue
     masks.append(
         cv2.inRange(
@@ -122,7 +102,6 @@ def process_image(img_path, output_path):
             np.array([135, 255, 255])
         )
     )
-
     # Green
     masks.append(
         cv2.inRange(
@@ -131,7 +110,6 @@ def process_image(img_path, output_path):
             np.array([85, 255, 255])
         )
     )
-
     combined_obstacle_mask = masks[0]
 
     for m in masks[1:]:
@@ -144,131 +122,102 @@ def process_image(img_path, output_path):
         cv2.MORPH_ELLIPSE,
         (3, 3)
     )
-
     combined_obstacle_mask = cv2.morphologyEx(
         combined_obstacle_mask,
         cv2.MORPH_OPEN,
         kernel_noise
     )
-
     bottom_ignore_start = int(height * 0.92)
-
     combined_obstacle_mask[
         bottom_ignore_start:height, :
     ] = 0
-
     contours_obs, _ = cv2.findContours(
         combined_obstacle_mask,
         cv2.RETR_EXTERNAL,
         cv2.CHAIN_APPROX_SIMPLE
     )
-
     for cnt in contours_obs:
         area = cv2.contourArea(cnt)
-
         # NO minimum obstacle-area threshold
         if area <= 0:
             continue
-
         x, y, w, h = cv2.boundingRect(cnt)
-
         # Ignore anything in the bottom UI region
         if y >= bottom_ignore_start:
             continue
-
         if y + h > bottom_ignore_start:
             continue
-
         aspect_ratio = float(w) / h
-
         is_possible_merged_group = (
             area > 1000 and
             aspect_ratio > 1.15
         )
-
         if is_possible_merged_group:
             roi_x1 = max(0, x - 2)
             roi_y1 = max(0, y - 2)
             roi_x2 = min(width, x + w + 2)
             roi_y2 = min(height, y + h + 2)
-
             roi = combined_obstacle_mask[
                 roi_y1:roi_y2,
                 roi_x1:roi_x2
             ]
-
             dist = cv2.distanceTransform(
                 roi,
                 cv2.DIST_L2,
                 5
             )
-
             max_dist = dist.max()
 
             if max_dist > 0:
                 sure_foreground = np.uint8(
                     dist > (0.35 * max_dist)
                 )
-
                 # Find connected marker regions
                 marker_count, markers = cv2.connectedComponents(
                     sure_foreground
                 )
 
                 if marker_count > 2:
-
                     # Background marker
                     markers = markers + 1
-
                     unknown = cv2.subtract(
                         roi,
                         sure_foreground
                     )
-
                     markers[unknown == 255] = 0
-
                     roi_color = cv2.cvtColor(
                         roi,
                         cv2.COLOR_GRAY2BGR
                     )
-
                     cv2.watershed(
                         roi_color,
                         markers
                     )
-
                     detected_regions = []
-
                     for label in range(2, marker_count + 1):
                         region = np.uint8(
                             markers == label
                         ) * 255
-
                         region_contours, _ = cv2.findContours(
                             region,
                             cv2.RETR_EXTERNAL,
                             cv2.CHAIN_APPROX_SIMPLE
                         )
-
                         for region_cnt in region_contours:
                             rx, ry, rw, rh = cv2.boundingRect(
                                 region_cnt
                             )
-
                             if rw <= 0 or rh <= 0:
                                 continue
-
                             # Convert ROI coordinates back to image coordinates
                             abs_x = roi_x1 + rx
                             abs_y = roi_y1 + ry
                             detected_regions.append(
                                 (abs_x, abs_y, rw, rh)
                             )
-
                     if len(detected_regions) >= 2:
                         for ox, oy, ow, oh in detected_regions:
                             obstacle_count += 1
-
                             cv2.rectangle(
                                 img,
                                 (ox, oy),
@@ -276,7 +225,6 @@ def process_image(img_path, output_path):
                                 (0, 0, 255),
                                 2
                             )
-
                             cv2.putText(
                                 img,
                                 f"Obstacle ({ox},{oy})",
@@ -291,9 +239,7 @@ def process_image(img_path, output_path):
                                 f"({ox}, {oy})"
                             )
                         continue
-
         obstacle_count += 1
-
         cv2.rectangle(
             img,
             (x, y),
@@ -301,7 +247,6 @@ def process_image(img_path, output_path):
             (0, 0, 255),
             2
         )
-
         cv2.putText(
             img,
             f"Obstacle ({x},{y})",
@@ -311,17 +256,14 @@ def process_image(img_path, output_path):
             (0, 0, 255),
             1
         )
-
         print(
             f"Obstacle {obstacle_count}: "
             f"({x}, {y})"
         )
-
     summary = (
         f"Total Potholes: {pothole_count} | "
         f"Total Obstacles: {obstacle_count}"
     )
-
     cv2.rectangle(
         img,
         (10, 10),
@@ -329,7 +271,6 @@ def process_image(img_path, output_path):
         (0, 0, 0),
         -1
     )
-
     cv2.putText(
         img,
         summary,
@@ -339,54 +280,43 @@ def process_image(img_path, output_path):
         (255, 255, 255),
         2
     )
-
     cv2.imwrite(output_path, img)
-
     print(
         f"Done: {os.path.basename(img_path)} -> "
         f"Potholes: {pothole_count}, "
         f"Obstacles: {obstacle_count}"
     )
     print("-" * 60)
-
 script_dir = os.path.dirname(
     os.path.abspath(__file__)
 )
-
 input_dir = os.path.join(
     script_dir,
     "input"
 )
-
 output_dir = os.path.join(
     script_dir,
     "output"
 )
-
 os.makedirs(
     output_dir,
     exist_ok=True
 )
-
 for i in range(1, 11):
     file_name = f"{i}.png"
-
     in_file_path = os.path.join(
         input_dir,
         file_name
     )
-
     out_file_path = os.path.join(
         output_dir,
         f"{i}_output.png"
     )
-
     if os.path.exists(in_file_path):
         process_image(
             in_file_path,
             out_file_path
         )
-
     else:
         print(
             f"Skipped: {file_name} "
