@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import os
 
-
 def process_image(img_path, output_path):
     img = cv2.imread(img_path)
 
@@ -43,13 +42,10 @@ def process_image(img_path, output_path):
     )
 
     for cnt in contours_white:
-
         area = cv2.contourArea(cnt)
 
         if area > 25:
-
             x, y, w, h = cv2.boundingRect(cnt)
-
             perimeter = cv2.arcLength(cnt, True)
 
             if perimeter == 0:
@@ -103,7 +99,7 @@ def process_image(img_path, output_path):
                         f"({x}, {y})"
                     )
 
-       # =============================================================
+    # =============================================================
     # 2. OBSTACLE DETECTION
     # =============================================================
 
@@ -136,10 +132,6 @@ def process_image(img_path, output_path):
         )
     )
 
-    # -------------------------------------------------------------
-    # Combine obstacle colors
-    # -------------------------------------------------------------
-
     combined_obstacle_mask = masks[0]
 
     for m in masks[1:]:
@@ -147,15 +139,6 @@ def process_image(img_path, output_path):
             combined_obstacle_mask,
             m
         )
-
-    # -------------------------------------------------------------
-    # IMPORTANT:
-    # DO NOT use MORPH_CLOSE here.
-    #
-    # Closing was causing nearby obstacles to merge into one.
-    # A very small opening is used only to remove isolated
-    # single-pixel noise while preserving small objects.
-    # -------------------------------------------------------------
 
     kernel_noise = cv2.getStructuringElement(
         cv2.MORPH_ELLIPSE,
@@ -168,19 +151,11 @@ def process_image(img_path, output_path):
         kernel_noise
     )
 
-    # -------------------------------------------------------------
-    # Ignore bottom UI/text area
-    # -------------------------------------------------------------
-
     bottom_ignore_start = int(height * 0.92)
 
     combined_obstacle_mask[
         bottom_ignore_start:height, :
     ] = 0
-
-    # -------------------------------------------------------------
-    # Find initial contours
-    # -------------------------------------------------------------
 
     contours_obs, _ = cv2.findContours(
         combined_obstacle_mask,
@@ -189,7 +164,6 @@ def process_image(img_path, output_path):
     )
 
     for cnt in contours_obs:
-
         area = cv2.contourArea(cnt)
 
         # NO minimum obstacle-area threshold
@@ -207,28 +181,12 @@ def process_image(img_path, output_path):
 
         aspect_ratio = float(w) / h
 
-        # =========================================================
-        # CHECK WHETHER THIS COULD BE A MERGED GROUP
-        # =========================================================
-
-        # Large/wide blobs are candidates for containing multiple
-        # nearby obstacles.
-        #
-        # Small objects, including the small ball, are handled
-        # normally.
-        # =========================================================
-
         is_possible_merged_group = (
             area > 1000 and
             aspect_ratio > 1.15
         )
 
         if is_possible_merged_group:
-
-            # -----------------------------------------------------
-            # Extract this contour's region
-            # -----------------------------------------------------
-
             roi_x1 = max(0, x - 2)
             roi_y1 = max(0, y - 2)
             roi_x2 = min(width, x + w + 2)
@@ -239,10 +197,6 @@ def process_image(img_path, output_path):
                 roi_x1:roi_x2
             ]
 
-            # -----------------------------------------------------
-            # Distance transform
-            # -----------------------------------------------------
-
             dist = cv2.distanceTransform(
                 roi,
                 cv2.DIST_L2,
@@ -252,8 +206,6 @@ def process_image(img_path, output_path):
             max_dist = dist.max()
 
             if max_dist > 0:
-
-                # Peaks inside each object become separate markers
                 sure_foreground = np.uint8(
                     dist > (0.35 * max_dist)
                 )
@@ -262,10 +214,6 @@ def process_image(img_path, output_path):
                 marker_count, markers = cv2.connectedComponents(
                     sure_foreground
                 )
-
-                # -------------------------------------------------
-                # If multiple distinct peaks exist, use watershed
-                # -------------------------------------------------
 
                 if marker_count > 2:
 
@@ -279,7 +227,6 @@ def process_image(img_path, output_path):
 
                     markers[unknown == 255] = 0
 
-                    # Create a 3-channel image for watershed
                     roi_color = cv2.cvtColor(
                         roi,
                         cv2.COLOR_GRAY2BGR
@@ -290,14 +237,9 @@ def process_image(img_path, output_path):
                         markers
                     )
 
-                    # -------------------------------------------------
-                    # Extract each watershed object
-                    # -------------------------------------------------
-
                     detected_regions = []
 
                     for label in range(2, marker_count + 1):
-
                         region = np.uint8(
                             markers == label
                         ) * 255
@@ -309,7 +251,6 @@ def process_image(img_path, output_path):
                         )
 
                         for region_cnt in region_contours:
-
                             rx, ry, rw, rh = cv2.boundingRect(
                                 region_cnt
                             )
@@ -317,24 +258,15 @@ def process_image(img_path, output_path):
                             if rw <= 0 or rh <= 0:
                                 continue
 
-                            # Convert ROI coordinates back to image
-                            # coordinates
+                            # Convert ROI coordinates back to image coordinates
                             abs_x = roi_x1 + rx
                             abs_y = roi_y1 + ry
-
                             detected_regions.append(
                                 (abs_x, abs_y, rw, rh)
                             )
 
-                    # -------------------------------------------------
-                    # Use the watershed results if we actually got
-                    # multiple objects
-                    # -------------------------------------------------
-
                     if len(detected_regions) >= 2:
-
                         for ox, oy, ow, oh in detected_regions:
-
                             obstacle_count += 1
 
                             cv2.rectangle(
@@ -354,18 +286,11 @@ def process_image(img_path, output_path):
                                 (0, 0, 255),
                                 1
                             )
-
                             print(
                                 f"Obstacle {obstacle_count}: "
                                 f"({ox}, {oy})"
                             )
-
-                        # We have already processed this contour
                         continue
-
-        # =========================================================
-        # NORMAL SINGLE OBSTACLE
-        # =========================================================
 
         obstacle_count += 1
 
@@ -392,11 +317,6 @@ def process_image(img_path, output_path):
             f"({x}, {y})"
         )
 
-
-    # =============================================================
-    # 3. SUMMARY
-    # =============================================================
-
     summary = (
         f"Total Potholes: {pothole_count} | "
         f"Total Obstacles: {obstacle_count}"
@@ -420,10 +340,6 @@ def process_image(img_path, output_path):
         2
     )
 
-    # =============================================================
-    # 4. SAVE IMAGE
-    # =============================================================
-
     cv2.imwrite(output_path, img)
 
     print(
@@ -431,13 +347,7 @@ def process_image(img_path, output_path):
         f"Potholes: {pothole_count}, "
         f"Obstacles: {obstacle_count}"
     )
-
     print("-" * 60)
-
-
-# =============================================================
-# DYNAMIC PATH SETUP
-# =============================================================
 
 script_dir = os.path.dirname(
     os.path.abspath(__file__)
@@ -458,13 +368,7 @@ os.makedirs(
     exist_ok=True
 )
 
-
-# =============================================================
-# PROCESS IMAGES: 1.png, 2.png, 3.png ...
-# =============================================================
-
 for i in range(1, 11):
-
     file_name = f"{i}.png"
 
     in_file_path = os.path.join(
@@ -478,14 +382,12 @@ for i in range(1, 11):
     )
 
     if os.path.exists(in_file_path):
-
         process_image(
             in_file_path,
             out_file_path
         )
 
     else:
-
         print(
             f"Skipped: {file_name} "
             f"not found in {input_dir}"
