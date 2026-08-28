@@ -48,3 +48,19 @@ UGV DTU Software Department Final Round Submission
       4. **Region of Interest (ROI) Masking** (isolates the road triangular zone ahead)
       5. **Hough Lines & np.polyfit** (connects edge pixels into solid, extrapolated boundary lines)
       6. **Alpha Blending** (using `cv2.addWeighted` to paint a semi-transparent green drivable area overlay between the lines).
+
+---
+
+### 📅 28 August 2026
+*   **What I Did:** 
+    * Completed Task 3 (Obstacle & Pothole Detection).
+    * Created the file structure for `task-3` containing `input` and `output` subfolders.
+    * Wrote a Python script in `task-3/main.py` using OpenCV to isolate white circular blobs on the track and draw rectangular bounding boxes around them.
+    * Automatically printed the total object count and center coordinates for each obstacle onto the final output images.
+*   **Problems Faced:** 
+    * Filtering out small specks of dust, noise, or track textures that were being falsely detected as obstacles.
+    * Calculating the exact mathematical center of irregular circular blobs without the program crashing when calculating image moments.
+*   **What I Learnt:** 
+    * Learnt how to use **Binarisation/Thresholding** (`cv2.threshold` / Otsu's thresholding) to isolate objects of a specific brightness from a dark background.
+    * Learnt how **Morphological Operations** (opening and closing via `cv2.morphologyEx`) clean up small salt-and-pepper noise in an image.
+    * Understood **Contour Detection** (`cv2.findContours`) and how to extract spatial dimensions using bounding rectangles (`cv2.boundingRect`) and image moments (`cv2.moments`) to pinpoint exact center coordinates.
