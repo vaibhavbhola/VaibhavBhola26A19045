@@ -86,3 +86,17 @@ UGV DTU Software Department Final Round Submission
     *   **`networkx` (Graph Theory):** Learnt how to model a coordinate system as a grid graph. I used it to connect adjacent navigable pixels and easily prune nodes that intersected with lane boundaries or circular obstacles to create a "safe-zone" map.
     *   **`heapq` (Priority Queues):** Learnt how a binary min-heap dynamically keeps track of the lowest-cost open nodes during the search. This allowed the A* or Dijkstra-based algorithm to quickly extract the optimal node to visit next, drastically improving program performance.
     *   **System Integration:** Learnt how to integrate outputs from previous tasks (lane boundaries and obstacle coordinates) to build a functional decision-making system for an autonomous vehicle.
+
+    ### 📅 29 August 2026 (Bonus Task Progress)
+*   **What I Did:** 
+    *   Successfully executed a **dual-boot installation of Ubuntu** to create a native Linux environment for robotics development.
+    *   Installed and configured **ROS 2 Jazzy** following the official documentation and source requirements.
+    *   Explored the ROS 2 ecosystem by researching the implementation of nodes, topics (publisher/subscriber), and services (server/client).
+    *   Practiced navigating the Linux filesystem and managing packages via the command line.
+*   **Problems Faced:** 
+    *   **Environment Complexity:** Setting up a dual-boot system and installing the ROS 2 middleware presented significant technical hurdles.
+    *   **Time Constraints:** While I successfully configured the environment, the 1-hour deadline restricted my ability to fully debug and finalize the communication scripts for the publisher/subscriber nodes.
+*   **What I Learnt:** 
+    *   Gained a foundational understanding of ROS 2 as a middleware for robotic "brain" communication.
+    *   Learnt the difference between **Asynchronous communication** (Topics for streaming data) and **Synchronous communication** (Services for specific requests).
+    *   Mastered basic Linux terminal commands for system updates and package management, moving beyond a Windows-only workflow.
