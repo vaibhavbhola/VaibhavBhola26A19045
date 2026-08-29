@@ -69,3 +69,20 @@ UGV DTU Software Department Final Round Submission
     *   **What I Did:** Refined the threshold limits and contour filtering logic in `task-3/main.py` to improve the detection accuracy of the white circular obstacles.
     *   **Problems Faced:** Found that minor lighting variations and small non-obstacle pixels were occasionally causing false positives.
     *   **What I Learnt:** Learnt how to adjust the minimum area threshold filter (`cv2.contourArea`) dynamically to exclude background noise, ensuring only true obstacles/potholes are bounded.
+
+    ---
+
+    ### 📅 29 August 2026
+*   **What I Did:**
+    *   Successfully completed **Task 4: Aerial Path Planning** by developing a Python navigation system in `task-4/main.py`.
+    *   Engineered a spatial graph representation of the aerial track where nodes represent safe coordinate positions.
+    *   Implemented a pathfinding algorithm to calculate a continuous, collision-free route that completes a full loop around the track while staying strictly inside lane boundaries and avoiding circular obstacles.
+    *   Generated path overlays on the track images and saved the final results directly to the `task-4/output/` directory.
+*   **Problems Faced:**
+    *   **Steep Learning Curve:** I had never handled complex graph data structures or priority queues before, which made translating spatial coordinates into an efficient mathematical search path highly intimidating at first.
+    *   **OS Path Handling:** I ran into path-resolution crashes when transferring my pipeline across different directory formats, which made loading inputs and writing outputs tricky.
+*   **What I Learnt:**
+    *   **`pathlib` (Object-Oriented Paths):** Learnt how to replace error-prone string concatenation with modern, platform-independent path objects (`Path`). This cleanly handles loading from `task-4/input/` and writing to `task-4/output/` whether running on Windows, macOS, or Linux.
+    *   **`networkx` (Graph Theory):** Learnt how to model a coordinate system as a grid graph. I used it to connect adjacent navigable pixels and easily prune nodes that intersected with lane boundaries or circular obstacles to create a "safe-zone" map.
+    *   **`heapq` (Priority Queues):** Learnt how a binary min-heap dynamically keeps track of the lowest-cost open nodes during the search. This allowed the A* or Dijkstra-based algorithm to quickly extract the optimal node to visit next, drastically improving program performance.
+    *   **System Integration:** Learnt how to integrate outputs from previous tasks (lane boundaries and obstacle coordinates) to build a functional decision-making system for an autonomous vehicle.
